@@ -3,8 +3,7 @@ import { createClient } from "@supabase/supabase-js"
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://ouadrojjkpgipjdykwdd.supabase.co"
 const supabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91YWRyb2pqa3BnaXBqZHlrd2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxMDM5MzUsImV4cCI6MjA2NTY3OTkzNX0.Ajrx7pgfjKzI2ld2y_2ocoPG19Z_0UU4F4dee4oC9BU"
-
+  "your-supabase-url"
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Is Supabase actually configured?
