@@ -12,33 +12,35 @@ export function useAuthGuard(requireAuth = true) {
   useEffect(() => {
     if (loading) return
 
-    // Save current path for redirect after login
-    if (requireAuth && !user && pathname !== "/auth/login" && pathname !== "/auth/register") {
-      localStorage.setItem("redirect-after-login", pathname)
-      router.push("/auth/login")
+    // 1. Not logged in: always redirect to login (except register)
+    if (!user && pathname !== "/auth/login" && pathname !== "/auth/register") {
+      router.replace("/auth/login")
       return
     }
 
-    // If user is logged in but on auth pages, redirect appropriately
-    if (user && (pathname === "/auth/login" || pathname === "/auth/register")) {
-      const redirectPath = localStorage.getItem("redirect-after-login")
-      if (redirectPath) {
-        localStorage.removeItem("redirect-after-login")
-        router.push(redirectPath)
-      } else if (!profile?.form_completed) {
-        router.push("/survey")
+    // 2. Logged in and on any /auth/* page: redirect to posts (unless female needs survey)
+    if (user && pathname.startsWith("/auth")) {
+      if (profile && profile.gender === "female" && !profile.form_completed) {
+        router.replace("/survey")
       } else {
-        router.push("/posts")
+        router.replace("/posts")
       }
       return
     }
 
-    // If user hasn't completed form, redirect to survey (except if already on survey page)
-    if (user && profile && !profile.form_completed && pathname !== "/survey") {
-      router.push("/survey")
+    // 3. Female, first signup, not completed survey: always redirect to survey (unless already there)
+    if (user && profile && profile.gender === "female" && !profile.form_completed && pathname !== "/survey") {
+      router.replace("/survey")
+      return
+    }
+
+    // 4. If on /survey but not female or already completed, redirect to posts
+    if (user && profile && (profile.gender !== "female" || profile.form_completed) && pathname === "/survey") {
+      router.replace("/posts")
       return
     }
   }, [user, profile, loading, router, pathname, requireAuth])
 
   return { user, profile, loading }
 }
+

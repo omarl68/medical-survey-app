@@ -29,7 +29,8 @@ interface Post {
   image_url: string | null
   is_anonymous: boolean
   created_at: string
-  user_profiles: {
+  user_details?: {
+    id: string
     first_name: string
     last_name: string
     avatar_url?: string | null
@@ -92,15 +93,20 @@ export default function PostsPage() {
       else setLoadingMore(true)
 
       const { data, error } = await supabase
-        .from("posts")
+        .from('posts')
         .select(`
-      *,
-      user_profiles (first_name, last_name),
-      post_likes(count),
-      post_comments(count)
-    `)
+        *,
+user_details:user_profiles!fk_user_id (
+  id,
+  first_name,
+  last_name
+),
+        post_likes(count),
+        post_comments(count)
+      `)
         .order("created_at", { ascending: false })
         .range(pageNum * POSTS_PER_PAGE, (pageNum + 1) * POSTS_PER_PAGE - 1)
+
 
       if (error) throw error
 
@@ -363,27 +369,18 @@ export default function PostsPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-3">
                         <Avatar>
-                          {post.user_profiles?.avatar_url ? (
-                            <img
-                              src={post.user_profiles.avatar_url}
-                              alt="User avatar"
-                              className="w-8 h-8 rounded-full object-cover"
-                              width={32}
-                              height={32}
-                            />
-                          ) : (
-                            <AvatarFallback>
-                              {post.is_anonymous
-                                ? "A"
-                                : `${post.user_profiles?.first_name?.[0] || ""}${post.user_profiles?.last_name?.[0] || ""}`}
-                            </AvatarFallback>
-                          )}
+                          {/* Use user_details for avatar fallback */}
+                          <AvatarFallback>
+                            {post.is_anonymous
+                              ? "A"
+                              : `${post.user_details?.first_name?.[0] || ""}${post.user_details?.last_name?.[0] || ""}`}
+                          </AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="font-medium">
                             {post.is_anonymous
                               ? t("anonymous")
-                              : `${post.user_profiles?.first_name || ""} ${post.user_profiles?.last_name || ""}`}
+                              : `${post.user_details?.first_name || ""} ${post.user_details?.last_name || ""}`}
                           </p>
                           <p className="text-sm text-gray-500">{new Date(post.created_at).toLocaleDateString()}</p>
                         </div>

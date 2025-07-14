@@ -130,12 +130,6 @@ export default function SurveyPage() {
     }
   }
 
-  useEffect(() => {
-    if (!user || !profile) return;
-    if (profile.gender === "female" && !profile.form_completed) {
-      router.push("/survey");
-    }
-  }, [user, profile, router]);
 
   if (!user || !profile) return null;
   if (profile.gender !== "female") return null; // Optionally show a message

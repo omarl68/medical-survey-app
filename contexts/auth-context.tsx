@@ -6,6 +6,8 @@ import { createContext, useContext, useEffect, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { supabase, isSupabaseConfigured } from "@/lib/supabase"
 import type { Database } from "@/lib/supabase"
+import { useRouter } from "next/navigation";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
 
 type UserProfile = {
   id: string;
@@ -113,14 +115,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: new Error("Supabase not configured. Please add your environment variables.") }
     }
 
+    // Sign up and log in immediately, do not require email verification
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: undefined, // No verification email
+      },
     })
 
     if (!error && data.user) {
-      // Store user data temporarily for profile creation after email verification
-      localStorage.setItem("pending-profile-data", JSON.stringify(userData))
+      // Immediately log in the user
+      await supabase.auth.signInWithPassword({ email, password });
+      // Create user profile
+      await createProfile(userData);
+      // Redirect to posts
+      if (typeof window !== 'undefined') {
+        window.location.replace('/posts');
+      }
     }
 
     return { error }
@@ -226,4 +238,28 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider")
   }
   return context
+}
+
+export default function LoginPage() {
+  const { signIn } = useAuth();
+  const router = useRouter();
+  useAuthGuard(false); // So it redirects if already logged in
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const { error } = await signIn(email, password);
+    if (!error) {
+      router.replace("/posts"); // fallback navigation
+    }
+  };
+
+  return (
+    <form onSubmit={handleLogin}>
+      {/* ...inputs... */}
+      <button type="submit">Login</button>
+    </form>
+  );
 }

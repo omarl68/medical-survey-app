@@ -87,7 +87,11 @@ export default function RegisterPage() {
       age: formData.age ? Number.parseInt(formData.age) : null,
       gender: formData.gender as any,
       origin_city: formData.originCity,
+      form_completed: formData.gender === "male" ? true : false, // <--- this line
     }
+
+    // Save to localStorage for use after auth
+    localStorage.setItem("pending-profile-data", JSON.stringify(userData));
 
     const { error } = await signUp(formData.email, formData.password, userData)
 

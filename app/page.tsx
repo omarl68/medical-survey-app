@@ -28,9 +28,9 @@ export default function HomePage() {
     if (!loading && !error) { // <-- Only redirect if no error
       if (!user) {
         router.push("/auth/login")
-      } else if (profile && !profile.form_completed && profile.gender === "female") {
+      } else if (profile  && profile.gender === "female" && profile.form_completed === false) {
         router.push("/survey")
-      } else if (profile && profile.form_completed) {
+      } else if (profile) {
         router.push("/posts")
       }
     }

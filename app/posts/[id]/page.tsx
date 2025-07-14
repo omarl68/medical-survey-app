@@ -26,7 +26,8 @@ interface Post {
   likes_count: number
   comments_count: number
   created_at: string
-  user_profiles: {
+  user_details?: {
+    id: string
     first_name: string
     last_name: string
   } | null
@@ -63,10 +64,7 @@ export default function PostDetailPage() {
       router.push("/auth/login")
       return
     }
-    if (!profile?.form_completed) {
-      router.push("/survey")
-      return
-    }
+
     fetchPost()
     fetchLikeStatus()
     fetchLikeCount()
@@ -76,8 +74,16 @@ export default function PostDetailPage() {
     try {
       const { data, error } = await supabase
         .from("posts")
-        .select(`*, user_profiles (first_name, last_name)`)
-        .eq("id", postId)
+        .select(`
+          *,
+          user_details:user_profiles!fk_user_id (
+            id,
+            first_name,
+            last_name
+          ),
+          post_likes(count),
+          post_comments(count)
+        `).eq("id", postId)
         .single()
       if (error) throw error
       setPost(data)
@@ -190,16 +196,16 @@ export default function PostDetailPage() {
                   <AvatarFallback>
                     {post.is_anonymous
                       ? "A"
-                      : `${post.user_profiles?.first_name?.[0] || ""}${post.user_profiles?.last_name?.[0] || ""}`}
+                      : `${post.user_details?.first_name?.[0] || ""}${post.user_details?.last_name?.[0] || ""}`}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="font-medium text-lg">
                     {post.is_anonymous
                       ? "Anonymous"
-                      : `${post.user_profiles?.first_name || ""} ${post.user_profiles?.last_name || ""}`}
+                      : `${post.user_details?.first_name || ""} ${post.user_details?.last_name || ""}`}
                   </p>
-                  <p className="text-sm text-gray-500">{format(new Date(post.created_at), "yyyy-MM-dd")}</p>
+                  <p className="text-sm text-gray-500">{new Date(post.created_at).toISOString().slice(0, 10)}</p>
                 </div>
               </div>
               {post.is_anonymous && <Badge variant="secondary">Anonymous</Badge>}
