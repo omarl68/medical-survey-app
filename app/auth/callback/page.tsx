@@ -9,34 +9,51 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      const { data, error } = await supabase.auth.getSession()
-
+      const { data, error } = await supabase.auth.getSession();
       if (error) {
-        console.error("Auth callback error:", error)
-        router.push("/auth/login")
-        return
+        router.push("/auth/login");
+        return;
       }
-
       if (data.session) {
-        // Check if user has completed their profile
+        const user = data.session.user;
+        // Try to fetch profile
         const { data: profile } = await supabase
           .from("user_profiles")
-          .select("form_completed")
-          .eq("id", data.session.user.id)
-          .single()
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle();
 
-        if (profile?.form_completed) {
-          router.push("/posts")
+        if (!profile) {
+          // Create minimal profile for Google OAuth
+          await supabase.from("user_profiles").insert({
+            id: user.id,
+            first_name: user.user_metadata?.full_name?.split(" ")[0] || "",
+            last_name: user.user_metadata?.full_name?.split(" ").slice(1).join(" ") || "",
+            role: "user",
+            form_completed: false,
+          });
+          router.push("/complete-profile");
+          return;
+        }
+
+        if (!profile.form_completed) {
+          router.push("/complete-profile");
+          return;
+        }
+
+        // If profile is complete, redirect based on gender
+        if (profile.gender === "female") {
+          router.push("/survey");
         } else {
-          router.push("/survey")
+          router.push("/posts");
         }
       } else {
-        router.push("/auth/login")
+        router.push("/auth/login");
       }
-    }
+    };
 
-    handleAuthCallback()
-  }, [router])
+    handleAuthCallback();
+  }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
